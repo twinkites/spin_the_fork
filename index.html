@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spin the Fork</title>
+  <meta name="description" content="Pick a random restaurant near any US zipcode. Powered by OpenStreetMap." />
+  <meta property="og:title" content="Spin the Fork" />
+  <meta property="og:description" content="Don't know what to eat? Don't worry, just spin the fork!" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="1.svg" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H"
+        crossorigin="anonymous" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0f1923;
+      color: #fff;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: #bd3039;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.3px; }
+    header span { font-size: 0.82rem; opacity: 0.75; }
+    header img.logo { width: 36px; height: 36px; object-fit: contain; flex-shrink: 0; transition: transform 0.3s ease; }
+    header img.logo.spinning { animation: spin 0.8s linear infinite; }
+    header .header-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+    header .copyright { font-size: 0.72rem; opacity: 0.6; white-space: nowrap; }
+
+    .controls {
+      background: #1a2332;
+      padding: 12px 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #263040;
+      z-index: 1000;
+    }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+
+    label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: #7a8fa3;
+      font-weight: 600;
+    }
+
+    .zip-row { display: flex; gap: 6px; align-items: stretch; }
+
+    input[type="text"] {
+      background: #0f1923;
+      color: #e0eaf4;
+      border: 1px solid #263040;
+      border-radius: 7px;
+      padding: 8px 12px;
+      font-size: 0.88rem;
+      width: 120px;
+      letter-spacing: 1px;
+    }
+    input[type="text"]::placeholder { color: #4a5f74; letter-spacing: 0; }
+    input[type="text"]:focus { outline: 2px solid #bd3039; outline-offset: 1px; }
+
+    .btn-go {
+      background: #263040;
+      color: #c0d0e0;
+      border: 1px solid #263040;
+      border-radius: 7px;
+      padding: 0 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn-go:hover:not(:disabled) { background: #324050; }
+    .btn-go:disabled { opacity: 0.65; cursor: not-allowed; }
+    #zip-status {
+      font-size: 0.75rem;
+      color: #7a8fa3;
+      margin-top: 3px;
+      min-height: 1em;
+      font-style: italic;
+    }
+    #zip-status.err { color: #e05060; font-style: normal; }
+
+    select {
+      background: #0f1923;
+      color: #e0eaf4;
+      border: 1px solid #263040;
+      border-radius: 7px;
+      padding: 8px 12px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      min-width: 180px;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a8fa3' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+    select:focus { outline: 2px solid #bd3039; outline-offset: 1px; }
+
+    #pick-btn {
+      background: #bd3039;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 9px 22px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+      align-self: center;
+    }
+    #pick-btn:hover:not(:disabled) { background: #d03a44; }
+    #pick-btn:active { transform: scale(0.97); }
+    #pick-btn:disabled { background: #3a4454; color: #6a7a8a; cursor: not-allowed; }
+
+    .map-container { flex: 1; position: relative; }
+    #map { width: 100%; height: 100%; }
+
+    #loading {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 18, 28, 0.65);
+      z-index: 800;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+    }
+    #loading.on { display: flex; }
+    .spinner {
+      width: 42px; height: 42px;
+      border: 3px solid #263040;
+      border-top-color: #bd3039;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading p { font-size: 0.88rem; color: #c8d8e8; }
+
+    #toast {
+      display: none;
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2a3444;
+      border: 1px solid #bd3039;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 0.85rem;
+      color: #e0eaf4;
+      z-index: 900;
+      white-space: nowrap;
+      animation: fadeIn 0.2s ease;
+    }
+    #toast.on { display: block; }
+    @keyframes fadeIn { from { opacity: 0; top: 10px; } to { opacity: 1; top: 20px; } }
+
+    #card {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(240px);
+      background: #1a2332;
+      border: 1px solid #263040;
+      border-radius: 14px;
+      padding: 18px 22px;
+      width: min(400px, calc(100vw - 32px));
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      transition: transform 0.38s cubic-bezier(0.34, 1.45, 0.64, 1);
+      z-index: 900;
+    }
+    #card.on { transform: translateX(-50%) translateY(0); }
+
+    #card .eyebrow {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #bd3039;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    #card h2 { font-size: 1.22rem; font-weight: 700; line-height: 1.3; margin-bottom: 5px; }
+    #card .tag {
+      display: inline-block;
+      background: #263040;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.76rem;
+      color: #9ab0c6;
+      margin-bottom: 8px;
+    }
+    #card .addr { font-size: 0.83rem; color: #7a8fa3; margin-bottom: 14px; }
+
+    .actions { display: flex; gap: 8px; }
+    .actions a, .actions button {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 7px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      text-align: center;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-g { background: #1a73e8; color: #fff; }
+    .btn-g:hover { background: #2a83f8; }
+    .btn-r { background: #263040; color: #c0d0e0; }
+    .btn-r:hover { background: #324050; }
+
+    #dl-btn {
+      display: none;
+      background: #1a3a2a;
+      color: #4caf80;
+      border: 1px solid #2a5a3a;
+      border-radius: 7px;
+      padding: 9px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+      align-self: center;
+    }
+    #dl-btn.visible { display: block; }
+    #dl-btn:hover { background: #224830; }
+
+    @media (max-width: 560px) {
+      .controls { gap: 8px; padding: 10px 14px; }
+      select { min-width: 150px; }
+      #card { bottom: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <img class="logo" src="1.svg" alt="Twin Kites LLC" />
+    <div>
+      <h1>Spin the Fork</h1>
+      <span>Don't know what to eat? Don't worry, just spin the fork!</span>
+    </div>
+  </div>
+  <div class="copyright">&copy; 2026 Twin Kites LLC &nbsp;·&nbsp; For Katie &amp; Carolyn — Happy Birthday Katie!</div>
+</header>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Zipcode</label>
+    <div class="zip-row">
+      <input type="text" id="zip" maxlength="10" placeholder="e.g. 02116" autocomplete="postal-code" />
+      <button class="btn-go" id="go-btn">Go</button>
+    </div>
+    <div id="zip-status"></div>
+  </div>
+
+  <div class="control-group">
+    <label for="cuisine">Cuisine Type</label>
+    <select id="cuisine">
+      <option value="">Any cuisine</option>
+      <option value="american">American</option>
+      <option value="burger">Burgers</option>
+      <option value="pizza">Pizza</option>
+      <option value="italian">Italian</option>
+      <option value="chinese">Chinese</option>
+      <option value="japanese|sushi">Japanese / Sushi</option>
+      <option value="thai">Thai</option>
+      <option value="vietnamese">Vietnamese</option>
+      <option value="indian">Indian</option>
+      <option value="mexican">Mexican</option>
+      <option value="mediterranean">Mediterranean</option>
+      <option value="seafood">Seafood</option>
+      <option value="korean">Korean</option>
+      <option value="french">French</option>
+      <option value="barbecue">BBQ</option>
+    </select>
+  </div>
+
+  <button id="pick-btn" disabled>Pick for Me</button>
+  <button id="dl-btn" title="Download results as GeoJSON">&#x2913; GeoJSON</button>
+</div>
+
+<div class="map-container">
+  <div id="map"></div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <p id="loading-msg">Finding restaurants…</p>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="card">
+    <div class="eyebrow">Tonight's Pick</div>
+    <h2 id="c-name"></h2>
+    <div class="tag" id="c-tag"></div>
+    <div class="addr" id="c-addr"></div>
+    <div class="actions">
+      <a id="c-gmap" href="#" target="_blank" rel="noopener" class="btn-g">Open in Google Maps</a>
+      <button class="btn-r" id="again-btn">Pick Another</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH"
+        crossorigin="anonymous"></script>
+<script>
+  const map = L.map('map', { zoomControl: true }).setView([42.3601, -71.0589], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 19,
+  }).addTo(map);
+
+  let currentLoc  = null;  // { lat, lng, city }
+  let areaCircle  = null;
+  let pickMarker  = null;
+  let restaurants = [];
+  let cacheKey    = null;
+  const geoCache  = {};
+
+  const zipInput  = document.getElementById('zip');
+  const goBtn     = document.getElementById('go-btn');
+  const cuisSel   = document.getElementById('cuisine');
+  const pickBtn   = document.getElementById('pick-btn');
+  const dlBtn     = document.getElementById('dl-btn');
+  const zipStatus = document.getElementById('zip-status');
+  const loading   = document.getElementById('loading');
+  const loadMsg   = document.getElementById('loading-msg');
+  const logo      = document.querySelector('header img.logo');
+
+  // Trigger geocode on Enter key in zip input
+  zipInput.addEventListener('keydown', e => { if (e.key === 'Enter') geocodeAndZoom(); });
+  goBtn.addEventListener('click', geocodeAndZoom);
+
+  async function geocodeAndZoom() {
+    const zip = zipInput.value.trim();
+    if (!zip) return;
+
+    setZipStatus('', false);
+    goBtn.disabled = true;
+    logo.classList.add('spinning');
+    setLoadingMsg('Looking up zipcode…');
+    setLoading(true);
+
+    try {
+      const loc = await geocodeZip(zip);
+      currentLoc = loc;
+      map.flyTo([loc.lat, loc.lng], 15, { duration: 1.1 });
+      if (areaCircle) areaCircle.remove();
+      areaCircle = L.circle([loc.lat, loc.lng], {
+        radius: 750,
+        color: '#bd3039',
+        fillColor: '#bd3039',
+        fillOpacity: 0.07,
+        weight: 1.5,
+        dashArray: '6 5',
+      }).addTo(map);
+      setZipStatus(loc.city, false);
+      pickBtn.disabled = false;
+      dlBtn.classList.remove('visible');
+      hideCard();
+      clearMarker();
+      restaurants = [];
+      cacheKey = null;
+    } catch (e) {
+      setZipStatus(e.message, true);
+      pickBtn.disabled = true;
+    } finally {
+      setLoading(false);
+      goBtn.disabled = false;
+      logo.classList.remove('spinning');
+    }
+  }
+
+  pickBtn.addEventListener('click', async () => {
+    if (!currentLoc) return;
+    const cuisine = cuisSel.value;
+    const key = `${currentLoc.lat},${currentLoc.lng}|${cuisine}`;
+
+    if (key !== cacheKey) {
+      setLoadingMsg('Finding restaurants…');
+      setLoading(true);
+      try {
+        restaurants = await fetchRestaurants(currentLoc.lat, currentLoc.lng, cuisine);
+        cacheKey = key;
+      } catch {
+        setLoading(false);
+        showToast('Could not reach restaurant data. Try again.');
+        return;
+      }
+      setLoading(false);
+    }
+
+    if (!restaurants.length) {
+      showToast('No restaurants found — try a different cuisine or zipcode.');
+      dlBtn.classList.remove('visible');
+      return;
+    }
+    dlBtn.classList.add('visible');
+    dlBtn.textContent = `\u2913 GeoJSON (${restaurants.length})`;
+    pickRandom();
+  });
+
+  document.getElementById('again-btn').addEventListener('click', () => {
+    if (!restaurants.length) return;
+    hideCard();
+    setTimeout(pickRandom, 220);
+  });
+
+  // ── Geocoding ──────────────────────────────────────────────────────────────
+
+  async function geocodeZip(zip) {
+    if (geoCache[zip]) return geoCache[zip];
+    const url = `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(zip)}&countrycodes=us&format=json&limit=1&addressdetails=1&email=twinkites%40proton.me`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'en-US,en' } });
+    if (!res.ok) throw new Error('Geocoder unavailable');
+    const data = await res.json();
+    if (!data.length) throw new Error(`Zipcode "${zip}" not found`);
+    const d = data[0];
+    const city = d.address?.city || d.address?.town || d.address?.village || d.address?.county || '';
+    const state = d.address?.state_code || d.address?.state || '';
+    const result = {
+      lat: parseFloat(d.lat),
+      lng: parseFloat(d.lon),
+      city: [city, state].filter(Boolean).join(', '),
+    };
+    geoCache[zip] = result;
+    return result;
+  }
+
+  // ── Restaurant fetch ───────────────────────────────────────────────────────
+
+  const OVERPASS_ENDPOINTS = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+  ];
+
+  async function fetchRestaurants(lat, lng, cuisine) {
+    const radius = 800;
+    const cFilter = cuisine ? `["cuisine"~"${cuisine}",i]` : '';
+    const q = `[out:json][timeout:25];(node["amenity"="restaurant"]${cFilter}(around:${radius},${lat},${lng});way["amenity"="restaurant"]${cFilter}(around:${radius},${lat},${lng}););out center tags;`;
+    const body = 'data=' + encodeURIComponent(q);
+
+    let json;
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+        });
+        if (!res.ok) continue;
+        json = await res.json();
+        break;
+      } catch { continue; }
+    }
+    if (!json) throw new Error('All endpoints failed');
+
+    const seen = new Set();
+    return json.elements
+      .filter(el => el.tags?.name)
+      .map(el => ({
+        name: el.tags.name,
+        cuisine: formatCuisine(el.tags.cuisine),
+        address: buildAddr(el.tags, currentLoc.city),
+        lat: el.lat ?? el.center?.lat,
+        lng: el.lon ?? el.center?.lon,
+      }))
+      .filter(r => r.lat && r.lng && !seen.has(r.name) && seen.add(r.name));
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  function pickRandom() {
+    const r = restaurants[Math.floor(Math.random() * restaurants.length)];
+    clearMarker();
+    map.flyTo([r.lat, r.lng], 17, { duration: 0.9 });
+
+    const icon = L.divIcon({
+      html: `<div style="width:28px;height:28px;background:#bd3039;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 3px 10px rgba(0,0,0,0.5)"></div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 28],
+      className: '',
+    });
+
+    const popupEl = document.createElement('strong');
+    popupEl.style.fontSize = '0.9rem';
+    popupEl.textContent = r.name;
+    pickMarker = L.marker([r.lat, r.lng], { icon })
+      .addTo(map)
+      .bindPopup(popupEl)
+      .openPopup();
+
+    document.getElementById('c-name').textContent = r.name;
+    document.getElementById('c-tag').textContent = r.cuisine || 'Restaurant';
+    document.getElementById('c-addr').textContent = r.address;
+    document.getElementById('c-gmap').href =
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + r.address)}`;
+    showCard();
+  }
+
+  function buildAddr(t, fallbackCity) {
+    const parts = [];
+    if (t['addr:housenumber'] && t['addr:street'])
+      parts.push(`${t['addr:housenumber']} ${t['addr:street']}`);
+    else if (t['addr:street'])
+      parts.push(t['addr:street']);
+    parts.push(t['addr:city'] || fallbackCity || '');
+    return parts.filter(Boolean).join(', ');
+  }
+
+  function formatCuisine(c) {
+    if (!c) return '';
+    return c.split(/[;,]/)[0].trim().replace(/_/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
+  }
+
+  dlBtn.addEventListener('click', () => {
+    const zip = zipInput.value.trim() || 'results';
+    const cuisine = cuisSel.value || 'any';
+    const fc = {
+      type: 'FeatureCollection',
+      features: restaurants.map(r => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [r.lng, r.lat] },
+        properties: { name: r.name, cuisine: r.cuisine, address: r.address },
+      })),
+    };
+    const blob = new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `restaurants_${zip}_${cuisine}.geojson`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  function clearMarker() { if (pickMarker) { pickMarker.remove(); pickMarker = null; } }
+  function showCard()  { document.getElementById('card').classList.add('on'); }
+  function hideCard()  { document.getElementById('card').classList.remove('on'); }
+  function setLoading(on) { loading.classList.toggle('on', on); }
+  function setLoadingMsg(msg) { loadMsg.textContent = msg; }
+  function setZipStatus(msg, isErr) {
+    zipStatus.textContent = msg;
+    zipStatus.className = isErr ? 'err' : '';
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('on'), 3200);
+  }
+</script>
+</body>
+</html>
