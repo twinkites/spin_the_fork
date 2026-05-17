@@ -116,6 +116,51 @@
     }
     select:focus { outline: 2px solid #bd3039; outline-offset: 1px; }
 
+    /* Radius slider */
+    .radius-row { display: flex; align-items: center; gap: 8px; }
+    input[type="range"] {
+      accent-color: #bd3039;
+      width: 110px;
+      cursor: pointer;
+    }
+    #radius-val { font-size: 0.82rem; color: #e0eaf4; min-width: 38px; }
+
+    /* Toggle checkboxes (princess mode, open now) */
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 8px 12px;
+      background: #0f1923;
+      border: 1px solid #263040;
+      border-radius: 7px;
+      font-size: 0.85rem;
+      color: #e0eaf4;
+      transition: all 0.2s;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .toggle-label input[type="checkbox"] { display: none; }
+    .toggle-label:hover { border-color: #4a6080; }
+
+    .princess-label { /* extends toggle-label */ }
+    .princess-label:hover { border-color: #c64fa0; }
+    .princess-label.active {
+      border-color: #c64fa0;
+      background: linear-gradient(135deg, #220a35, #2a0820);
+      color: #f0a0d8;
+      box-shadow: 0 0 14px rgba(198,79,160,0.35);
+    }
+    .princess-hint { font-size: 0.7rem; color: #7a8fa3; font-style: italic; margin-top: 3px; }
+
+    .open-now-label.active {
+      border-color: #4caf80;
+      background: linear-gradient(135deg, #0a2218, #0a2010);
+      color: #80d8a8;
+      box-shadow: 0 0 12px rgba(76,175,80,0.25);
+    }
+
     #pick-btn {
       background: #bd3039;
       color: #fff;
@@ -181,26 +226,47 @@
       position: absolute;
       bottom: 28px;
       left: 50%;
-      transform: translateX(-50%) translateY(240px);
+      transform: translateX(-50%) translateY(280px);
       background: #1a2332;
       border: 1px solid #263040;
       border-radius: 14px;
       padding: 18px 22px;
-      width: min(400px, calc(100vw - 32px));
+      width: min(420px, calc(100vw - 32px));
       box-shadow: 0 10px 40px rgba(0,0,0,0.6);
       transition: transform 0.38s cubic-bezier(0.34, 1.45, 0.64, 1);
       z-index: 900;
     }
     #card.on { transform: translateX(-50%) translateY(0); }
 
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      gap: 8px;
+    }
     #card .eyebrow {
       font-size: 0.68rem;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: #bd3039;
       font-weight: 700;
-      margin-bottom: 5px;
+      padding-top: 2px;
     }
+    .btn-share {
+      background: none;
+      border: 1px solid #263040;
+      border-radius: 6px;
+      color: #7a8fa3;
+      cursor: pointer;
+      padding: 3px 9px;
+      font-size: 0.72rem;
+      transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-share:hover { border-color: #4caf80; color: #4caf80; }
+
     #card h2 { font-size: 1.22rem; font-weight: 700; line-height: 1.3; margin-bottom: 5px; }
     #card .tag {
       display: inline-block;
@@ -209,9 +275,34 @@
       padding: 2px 10px;
       font-size: 0.76rem;
       color: #9ab0c6;
-      margin-bottom: 8px;
     }
-    #card .addr { font-size: 0.83rem; color: #7a8fa3; margin-bottom: 14px; }
+    #card .price-badge {
+      display: inline-block;
+      background: #1a3a2a;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.76rem;
+      color: #4caf80;
+      margin-left: 6px;
+      font-weight: 600;
+    }
+    #card .price-badge:empty { display: none; }
+    .tag-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0; margin-bottom: 8px; }
+
+    #card .addr { font-size: 0.83rem; color: #7a8fa3; margin-bottom: 6px; }
+
+    #card .contact {
+      font-size: 0.78rem;
+      color: #7a8fa3;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    #card .contact:empty { margin-bottom: 14px; }
+    #card .contact a { color: #7a8fa3; text-decoration: none; }
+    #card .contact a:hover { color: #c8d8e8; text-decoration: underline; }
 
     .actions { display: flex; gap: 8px; }
     .actions a, .actions button {
@@ -231,6 +322,22 @@
     .btn-r { background: #263040; color: #c0d0e0; }
     .btn-r:hover { background: #324050; }
 
+    .btn-veto {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      padding: 6px;
+      background: none;
+      border: 1px dashed #3a4454;
+      border-radius: 7px;
+      color: #4a6070;
+      font-size: 0.77rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .btn-veto:hover { border-color: #e05060; color: #e07080; border-style: solid; }
+
     #dl-btn {
       display: none;
       background: #1a3a2a;
@@ -248,10 +355,31 @@
     #dl-btn.visible { display: block; }
     #dl-btn:hover { background: #224830; }
 
+    @media (max-width: 640px) {
+      .copyright { display: none; }
+      header span { display: none; }
+    }
+
     @media (max-width: 560px) {
-      .controls { gap: 8px; padding: 10px 14px; }
-      select { min-width: 150px; }
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 10px 12px;
+      }
+      /* Zipcode full width */
+      .controls .control-group:first-child { grid-column: 1 / -1; }
+      /* Radius full width for slider room */
+      .controls .radius-group { grid-column: 1 / -1; }
+      .radius-row input[type="range"] { flex: 1; width: auto; }
+      /* Princess full width (has hint text) */
+      .controls .princess-group { grid-column: 1 / -1; }
+      /* Buttons full width */
+      #pick-btn { grid-column: 1 / -1; align-self: center; }
+      #dl-btn   { grid-column: 1 / -1; align-self: center; text-align: center; }
+      select { min-width: 0; width: 100%; }
       #card { bottom: 14px; }
+      .toggle-label { font-size: 0.82rem; }
     }
   </style>
 </head>
@@ -300,6 +428,42 @@
     </select>
   </div>
 
+  <div class="control-group">
+    <label for="price">Price Point</label>
+    <select id="price">
+      <option value="">Any price</option>
+      <option value="1">$ — Cheap eats</option>
+      <option value="2">$$ — Moderate</option>
+      <option value="3">$$$ — Upscale</option>
+      <option value="4">$$$$ — Fine dining</option>
+    </select>
+  </div>
+
+  <div class="control-group radius-group">
+    <label for="radius">Radius</label>
+    <div class="radius-row">
+      <input type="range" id="radius" min="400" max="4800" step="400" value="800" />
+      <span id="radius-val">0.5 mi</span>
+    </div>
+  </div>
+
+  <div class="control-group princess-group">
+    <label>Mode</label>
+    <label class="toggle-label princess-label" id="princess-label">
+      <input type="checkbox" id="princess" />
+      <span>&#x1F451; Princess Mode</span>
+    </label>
+    <div class="princess-hint">Mezcal &amp; Mexican spots</div>
+  </div>
+
+  <div class="control-group">
+    <label>Hours</label>
+    <label class="toggle-label open-now-label" id="open-now-label">
+      <input type="checkbox" id="open-now" />
+      <span>&#x1F550; Open Now</span>
+    </label>
+  </div>
+
   <button id="pick-btn" disabled>Pick for Me</button>
   <button id="dl-btn" title="Download results as GeoJSON">&#x2913; GeoJSON</button>
 </div>
@@ -315,14 +479,22 @@
   <div id="toast"></div>
 
   <div id="card">
-    <div class="eyebrow">Tonight's Pick</div>
+    <div class="card-header">
+      <div class="eyebrow">Tonight's Pick</div>
+      <button class="btn-share" id="share-btn">&#x1F517; Copy link</button>
+    </div>
     <h2 id="c-name"></h2>
-    <div class="tag" id="c-tag"></div>
+    <div class="tag-row">
+      <div class="tag" id="c-tag"></div>
+      <span class="price-badge" id="c-price"></span>
+    </div>
     <div class="addr" id="c-addr"></div>
+    <div class="contact" id="c-contact"></div>
     <div class="actions">
-      <a id="c-gmap" href="#" target="_blank" rel="noopener" class="btn-g">Open in Google Maps</a>
+      <a id="c-gmap" href="#" target="_blank" rel="noopener" class="btn-g">Open in Maps</a>
       <button class="btn-r" id="again-btn">Pick Another</button>
     </div>
+    <button class="btn-veto" id="veto-btn">&#x1F645; Not tonight — skip this one</button>
   </div>
 </div>
 
@@ -336,26 +508,83 @@
     maxZoom: 19,
   }).addTo(map);
 
-  let currentLoc  = null;  // { lat, lng, city }
-  let areaCircle  = null;
-  let pickMarker  = null;
-  let restaurants = [];
-  let cacheKey    = null;
-  const geoCache  = {};
+  let currentLoc        = null;
+  let areaCircle        = null;
+  let pickMarker        = null;
+  let restaurants       = [];
+  let cacheKey          = null;
+  let vetoed            = new Set();
+  let pendingSharedPick = null;
+  const geoCache        = {};
 
-  const zipInput  = document.getElementById('zip');
-  const goBtn     = document.getElementById('go-btn');
-  const cuisSel   = document.getElementById('cuisine');
-  const pickBtn   = document.getElementById('pick-btn');
-  const dlBtn     = document.getElementById('dl-btn');
-  const zipStatus = document.getElementById('zip-status');
-  const loading   = document.getElementById('loading');
-  const loadMsg   = document.getElementById('loading-msg');
-  const logo      = document.querySelector('header img.logo');
+  const zipInput      = document.getElementById('zip');
+  const goBtn         = document.getElementById('go-btn');
+  const cuisSel       = document.getElementById('cuisine');
+  const priceSelect   = document.getElementById('price');
+  const radiusSlider  = document.getElementById('radius');
+  const radiusVal     = document.getElementById('radius-val');
+  const princessChk   = document.getElementById('princess');
+  const princessLbl   = document.getElementById('princess-label');
+  const openNowChk    = document.getElementById('open-now');
+  const openNowLbl    = document.getElementById('open-now-label');
+  const pickBtn       = document.getElementById('pick-btn');
+  const dlBtn         = document.getElementById('dl-btn');
+  const zipStatus     = document.getElementById('zip-status');
+  const loading       = document.getElementById('loading');
+  const loadMsg       = document.getElementById('loading-msg');
+  const logo          = document.querySelector('header img.logo');
 
-  // Trigger geocode on Enter key in zip input
+  function getRadius() { return parseInt(radiusSlider.value); }
+  function formatMiles(m) { return (m / 1609.34).toFixed(1) + ' mi'; }
+
   zipInput.addEventListener('keydown', e => { if (e.key === 'Enter') geocodeAndZoom(); });
   goBtn.addEventListener('click', geocodeAndZoom);
+
+  radiusSlider.addEventListener('input', () => {
+    radiusVal.textContent = formatMiles(getRadius());
+    restaurants = [];
+    cacheKey = null;
+    dlBtn.classList.remove('visible');
+  });
+
+  princessChk.addEventListener('change', () => {
+    princessLbl.classList.toggle('active', princessChk.checked);
+    cuisSel.disabled = princessChk.checked;
+    restaurants = [];
+    cacheKey = null;
+    dlBtn.classList.remove('visible');
+    hideCard();
+    clearMarker();
+  });
+
+  openNowChk.addEventListener('change', () => {
+    openNowLbl.classList.toggle('active', openNowChk.checked);
+  });
+
+  document.getElementById('again-btn').addEventListener('click', () => {
+    if (!restaurants.length) return;
+    hideCard();
+    setTimeout(pickRandom, 220);
+  });
+
+  document.getElementById('veto-btn').addEventListener('click', () => {
+    const name = document.getElementById('c-name').textContent;
+    if (name) vetoed.add(name);
+    hideCard();
+    setTimeout(pickRandom, 220);
+  });
+
+  document.getElementById('share-btn').addEventListener('click', async () => {
+    updateShareUrl();
+    try {
+      await navigator.clipboard.writeText(location.href);
+      showToast('Link copied — share it with your crew!');
+    } catch {
+      showToast('Copy the URL from your address bar to share.');
+    }
+  });
+
+  // ── Geocoding ──────────────────────────────────────────────────────────────
 
   async function geocodeAndZoom() {
     const zip = zipInput.value.trim();
@@ -370,10 +599,11 @@
     try {
       const loc = await geocodeZip(zip);
       currentLoc = loc;
+      vetoed = new Set();
       map.flyTo([loc.lat, loc.lng], 15, { duration: 1.1 });
       if (areaCircle) areaCircle.remove();
       areaCircle = L.circle([loc.lat, loc.lng], {
-        radius: 750,
+        radius: getRadius(),
         color: '#bd3039',
         fillColor: '#bd3039',
         fillOpacity: 0.07,
@@ -387,6 +617,12 @@
       clearMarker();
       restaurants = [];
       cacheKey = null;
+
+      if (pendingSharedPick) {
+        const pick = pendingSharedPick;
+        pendingSharedPick = null;
+        showSharedPick(pick);
+      }
     } catch (e) {
       setZipStatus(e.message, true);
       pickBtn.disabled = true;
@@ -396,43 +632,6 @@
       logo.classList.remove('spinning');
     }
   }
-
-  pickBtn.addEventListener('click', async () => {
-    if (!currentLoc) return;
-    const cuisine = cuisSel.value;
-    const key = `${currentLoc.lat},${currentLoc.lng}|${cuisine}`;
-
-    if (key !== cacheKey) {
-      setLoadingMsg('Finding restaurants…');
-      setLoading(true);
-      try {
-        restaurants = await fetchRestaurants(currentLoc.lat, currentLoc.lng, cuisine);
-        cacheKey = key;
-      } catch {
-        setLoading(false);
-        showToast('Could not reach restaurant data. Try again.');
-        return;
-      }
-      setLoading(false);
-    }
-
-    if (!restaurants.length) {
-      showToast('No restaurants found — try a different cuisine or zipcode.');
-      dlBtn.classList.remove('visible');
-      return;
-    }
-    dlBtn.classList.add('visible');
-    dlBtn.textContent = `\u2913 GeoJSON (${restaurants.length})`;
-    pickRandom();
-  });
-
-  document.getElementById('again-btn').addEventListener('click', () => {
-    if (!restaurants.length) return;
-    hideCard();
-    setTimeout(pickRandom, 220);
-  });
-
-  // ── Geocoding ──────────────────────────────────────────────────────────────
 
   async function geocodeZip(zip) {
     if (geoCache[zip]) return geoCache[zip];
@@ -460,8 +659,42 @@
     'https://overpass.kumi.systems/api/interpreter',
   ];
 
+  pickBtn.addEventListener('click', async () => {
+    if (!currentLoc) return;
+    const cuisine = princessChk.checked
+      ? 'mexican|tex-mex|latin_american|tacos|taqueria|cantina'
+      : cuisSel.value;
+    const key = `${currentLoc.lat},${currentLoc.lng}|${cuisine}|${getRadius()}`;
+
+    if (key !== cacheKey) {
+      setLoadingMsg('Finding restaurants…');
+      setLoading(true);
+      if (areaCircle) {
+        areaCircle.setRadius(getRadius());
+      }
+      try {
+        restaurants = await fetchRestaurants(currentLoc.lat, currentLoc.lng, cuisine);
+        cacheKey = key;
+      } catch {
+        setLoading(false);
+        showToast('Could not reach restaurant data. Try again.');
+        return;
+      }
+      setLoading(false);
+    }
+
+    if (!restaurants.length) {
+      showToast('No restaurants found — try a different cuisine or zipcode.');
+      dlBtn.classList.remove('visible');
+      return;
+    }
+    dlBtn.classList.add('visible');
+    dlBtn.textContent = `⤓ GeoJSON (${restaurants.length})`;
+    pickRandom();
+  });
+
   async function fetchRestaurants(lat, lng, cuisine) {
-    const radius = 800;
+    const radius = getRadius();
     const cFilter = cuisine ? `["cuisine"~"${cuisine}",i]` : '';
     const q = `[out:json][timeout:25];(node["amenity"="restaurant"]${cFilter}(around:${radius},${lat},${lng});way["amenity"="restaurant"]${cFilter}(around:${radius},${lat},${lng}););out center tags;`;
     const body = 'data=' + encodeURIComponent(q);
@@ -485,19 +718,102 @@
     return json.elements
       .filter(el => el.tags?.name)
       .map(el => ({
-        name: el.tags.name,
-        cuisine: formatCuisine(el.tags.cuisine),
-        address: buildAddr(el.tags, currentLoc.city),
-        lat: el.lat ?? el.center?.lat,
-        lng: el.lon ?? el.center?.lon,
+        name:         el.tags.name,
+        cuisine:      formatCuisine(el.tags.cuisine),
+        address:      buildAddr(el.tags, currentLoc.city),
+        lat:          el.lat ?? el.center?.lat,
+        lng:          el.lon ?? el.center?.lon,
+        price:        parsePriceLevel(el.tags.price_range),
+        openingHours: el.tags.opening_hours || null,
+        website:      el.tags.website || el.tags['contact:website'] || null,
+        phone:        el.tags.phone || el.tags['contact:phone'] || null,
       }))
       .filter(r => r.lat && r.lng && !seen.has(r.name) && seen.add(r.name));
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
+  function parsePriceLevel(tag) {
+    if (!tag) return null;
+    const t = tag.toLowerCase().trim();
+    if (/^\$+$/.test(t)) return Math.min(t.length, 4);
+    if (/^[1-4]$/.test(t)) return parseInt(t);
+    if (t.includes('cheap') || t.includes('budget') || t.includes('inexpensive')) return 1;
+    if (t.includes('very expensive') || t.includes('fine') || t.includes('luxury')) return 4;
+    if (t.includes('expensive')) return 3;
+    if (t.includes('moderate') || t.includes('mid') || t.includes('average')) return 2;
+    return null;
+  }
+
+  function timeToMins(str) {
+    const [h, m] = str.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function dayMatches(dayPart, today) {
+    const order = ['mo','tu','we','th','fr','sa','su'];
+    for (const part of dayPart.split(',').map(p => p.trim())) {
+      if (part.includes('-')) {
+        const [s, e] = part.split('-').map(d => d.trim());
+        const si = order.indexOf(s), ei = order.indexOf(e), ti = order.indexOf(today);
+        if (si >= 0 && ei >= 0 && ti >= 0) {
+          if (si <= ei ? (ti >= si && ti <= ei) : (ti >= si || ti <= ei)) return true;
+        }
+      } else if (part === today) return true;
+    }
+    return false;
+  }
+
+  function isOpenNow(hoursStr) {
+    if (!hoursStr) return true;
+    const h = hoursStr.trim().toLowerCase();
+    if (h === '24/7') return true;
+    const dayNames = ['su','mo','tu','we','th','fr','sa'];
+    const today = dayNames[new Date().getDay()];
+    const now = new Date().getHours() * 60 + new Date().getMinutes();
+    for (const rule of h.split(';').map(r => r.trim())) {
+      const m = rule.match(/^(?:([a-z,\-\s]+?)\s+)?(\d{1,2}:\d{2})-(\d{1,2}:\d{2})$/);
+      if (!m) continue;
+      const [, dayPart, openStr, closeStr] = m;
+      if (dayPart && !dayMatches(dayPart.trim(), today)) continue;
+      const open = timeToMins(openStr), close = timeToMins(closeStr);
+      if (close > open ? (now >= open && now < close) : (now >= open || now < close)) return true;
+    }
+    return false;
+  }
+
+  const PRINCESS_TERMS = ['mexican', 'tex-mex', 'latin', 'tacos', 'mezcal', 'cantina', 'taqueria'];
+
   function pickRandom() {
-    const r = restaurants[Math.floor(Math.random() * restaurants.length)];
+    const priceLevel  = parseInt(priceSelect.value) || null;
+    const isPrincess  = princessChk.checked;
+    const filterOpen  = openNowChk.checked;
+
+    let pool = restaurants.filter(r => !vetoed.has(r.name));
+
+    if (!pool.length) {
+      showToast('All restaurants vetoed — try a new search.');
+      return;
+    }
+
+    if (priceLevel !== null) {
+      const pf = pool.filter(r => r.price === priceLevel);
+      if (pf.length === 0) showToast('No price data at that level — showing all prices.');
+      else pool = pf;
+    }
+
+    if (isPrincess) {
+      const pf = pool.filter(r => PRINCESS_TERMS.some(k => (r.cuisine || '').toLowerCase().includes(k)));
+      if (pf.length > 0) pool = pf;
+    }
+
+    if (filterOpen) {
+      const pf = pool.filter(r => isOpenNow(r.openingHours));
+      if (pf.length === 0) showToast('No confirmed open spots — hours data may be missing.');
+      else pool = pf;
+    }
+
+    const r = pool[Math.floor(Math.random() * pool.length)];
     clearMarker();
     map.flyTo([r.lat, r.lng], 17, { duration: 0.9 });
 
@@ -516,12 +832,108 @@
       .bindPopup(popupEl)
       .openPopup();
 
-    document.getElementById('c-name').textContent = r.name;
-    document.getElementById('c-tag').textContent = r.cuisine || 'Restaurant';
-    document.getElementById('c-addr').textContent = r.address;
+    document.getElementById('c-name').textContent  = r.name;
+    document.getElementById('c-tag').textContent   = r.cuisine || 'Restaurant';
+    document.getElementById('c-price').textContent = r.price ? '$'.repeat(r.price) : '';
+    document.getElementById('c-addr').textContent  = r.address;
     document.getElementById('c-gmap').href =
       `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + r.address)}`;
+
+    const contactEl = document.getElementById('c-contact');
+    contactEl.innerHTML = '';
+    if (r.phone) {
+      const a = document.createElement('a');
+      a.href = `tel:${r.phone.replace(/\s/g,'')}`;
+      a.textContent = '📞 ' + r.phone;
+      contactEl.appendChild(a);
+    }
+    if (r.website) {
+      const a = document.createElement('a');
+      a.href = r.website.startsWith('http') ? r.website : 'https://' + r.website;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      try { a.textContent = '🌐 ' + new URL(a.href).hostname.replace(/^www\./, ''); }
+      catch { a.textContent = '🌐 Website'; }
+      contactEl.appendChild(a);
+    }
+
+    updateShareUrl(r);
     showCard();
+  }
+
+  function updateShareUrl(r) {
+    const p = new URLSearchParams();
+    const zip = zipInput.value.trim();
+    if (zip) p.set('z', zip);
+    if (cuisSel.value) p.set('c', cuisSel.value);
+    if (priceSelect.value) p.set('p', priceSelect.value);
+    if (getRadius() !== 800) p.set('r', getRadius());
+    if (princessChk.checked) p.set('pm', '1');
+    if (openNowChk.checked) p.set('on', '1');
+    if (r) {
+      p.set('lat', r.lat);
+      p.set('lng', r.lng);
+      p.set('n', r.name);
+      if (r.cuisine) p.set('cu', r.cuisine);
+      if (r.address) p.set('ad', r.address);
+    }
+    history.replaceState(null, '', '#' + p.toString());
+  }
+
+  function showSharedPick(r) {
+    clearMarker();
+    map.flyTo([r.lat, r.lng], 17, { duration: 1.4 });
+
+    const icon = L.divIcon({
+      html: `<div style="width:28px;height:28px;background:#bd3039;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 3px 10px rgba(0,0,0,0.5)"></div>`,
+      iconSize: [28, 28], iconAnchor: [14, 28], className: '',
+    });
+    const popupEl = document.createElement('strong');
+    popupEl.style.fontSize = '0.9rem';
+    popupEl.textContent = r.name;
+    pickMarker = L.marker([r.lat, r.lng], { icon }).addTo(map).bindPopup(popupEl).openPopup();
+
+    document.getElementById('c-name').textContent  = r.name;
+    document.getElementById('c-tag').textContent   = r.cuisine || 'Restaurant';
+    document.getElementById('c-price').textContent = '';
+    document.getElementById('c-addr').textContent  = r.address || '';
+    document.getElementById('c-contact').innerHTML = '';
+    document.getElementById('c-gmap').href =
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + (r.address ? ' ' + r.address : ''))}`;
+    showCard();
+  }
+
+  function restoreFromHash() {
+    const hash = location.hash.slice(1);
+    if (!hash) return;
+    const p = new URLSearchParams(hash);
+
+    if (p.has('z')) zipInput.value = p.get('z');
+    if (p.has('c')) cuisSel.value = p.get('c');
+    if (p.has('p')) priceSelect.value = p.get('p');
+    if (p.has('r')) {
+      radiusSlider.value = p.get('r');
+      radiusVal.textContent = formatMiles(parseInt(p.get('r')));
+    }
+    if (p.get('pm') === '1') {
+      princessChk.checked = true;
+      princessLbl.classList.add('active');
+      cuisSel.disabled = true;
+    }
+    if (p.get('on') === '1') {
+      openNowChk.checked = true;
+      openNowLbl.classList.add('active');
+    }
+
+    const lat = parseFloat(p.get('lat'));
+    const lng = parseFloat(p.get('lng'));
+    const name = p.get('n');
+    if (p.has('z') && name && lat && lng) {
+      pendingSharedPick = { name, lat, lng, cuisine: p.get('cu') || '', address: p.get('ad') || '' };
+      geocodeAndZoom();
+    } else if (p.has('z')) {
+      geocodeAndZoom();
+    }
   }
 
   function buildAddr(t, fallbackCity) {
@@ -548,7 +960,7 @@
       features: restaurants.map(r => ({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [r.lng, r.lat] },
-        properties: { name: r.name, cuisine: r.cuisine, address: r.address },
+        properties: { name: r.name, cuisine: r.cuisine, address: r.address, phone: r.phone, website: r.website },
       })),
     };
     const blob = new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' });
@@ -577,6 +989,8 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('on'), 3200);
   }
+
+  restoreFromHash();
 </script>
 </body>
 </html>
